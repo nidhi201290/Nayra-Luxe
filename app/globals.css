@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Brand Colors */
+  --color-gold-primary: #AA7717;
+  --color-gold-light: #D49B33;
+  --color-ink: #000000;
+
+  /* Neutrals */
+  --color-ivory: #FAF5EC;
+  --color-white: #FFFFFF;
+  --color-charcoal: #2B2B2B;
+  --color-charcoal-muted: #6B6B6B;
+  --color-border: #E7DFD1;
+  --color-blush: #F4E3D8;
+
+  /* Functional */
+  --color-success: #3F7D58;
+  --color-error: #B3261E;
+  --color-sale: #B3261E;
+  --color-warning: #B8860B;
+
+  /* Typography — matched to mehere.shop's live fonts (Sora headings, Fira Sans body) */
+  --font-display: var(--font-sora), -apple-system, sans-serif;
+  --font-body: var(--font-fira-sans), -apple-system, sans-serif;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 3px rgba(43, 43, 43, 0.06);
+  --shadow-md: 0 4px 12px rgba(43, 43, 43, 0.10);
+  --shadow-lg: 0 12px 32px rgba(43, 43, 43, 0.14);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-white);
+    color: var(--color-charcoal);
+    font-family: var(--font-body);
+  }
+
+  /* Reference site only applies Sora to large section/page headings — h3+ (card
+     titles, modal titles) inherit the body font, matching its product-title usage. */
+  h1, h2 {
+    font-family: var(--font-display);
+    color: var(--color-charcoal);
+  }
+
+  h3, h4, h5, h6 {
+    color: var(--color-charcoal);
+  }
+
+  ::selection {
+    background-color: var(--color-blush);
+    color: var(--color-charcoal);
+  }
+
+  /* Section 5, Iconography: thin-line 1.5px stroke, rounded caps for all icons */
+  .lucide {
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply text-caption font-semibold uppercase tracking-[0.08em] text-gold-primary;
+  }
+
+  .tracked-caps {
+    letter-spacing: 0.04em;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md bg-gold-primary px-6 py-3 desktop:px-8 desktop:py-3.5 text-button font-semibold uppercase tracked-caps text-white transition-colors duration-200 hover:bg-gold-light disabled:bg-border disabled:text-charcoal-muted disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-md border-[1.5px] border-gold-primary bg-transparent px-6 py-3 desktop:px-8 desktop:py-3.5 text-button font-semibold uppercase tracked-caps text-gold-primary transition-colors duration-200 hover:bg-blush;
+  }
+
+  .btn-text {
+    @apply inline-flex items-center gap-1 text-body font-medium text-charcoal underline-offset-4 transition-colors duration-200 hover:text-gold-primary hover:underline;
+  }
+
+  .input-field {
+    @apply w-full rounded-sm border border-border bg-white px-4 py-3 text-body text-charcoal placeholder:text-charcoal-muted focus:border-gold-primary focus:outline-none focus:ring-[3px] focus:ring-gold-primary/15;
+  }
+
+  .card {
+    @apply rounded-md border border-border bg-white shadow-sm transition-[box-shadow,border-color,transform] duration-200;
+  }
+
+  .pill {
+    @apply rounded-full px-3 py-1 text-caption font-medium;
+  }
+
+  .section {
+    @apply mx-auto max-w-content px-4 md:px-8;
+  }
+
+  .section-y {
+    @apply py-8 md:py-12;
+  }
+}
+
+@keyframes bounce-in {
+  0% { transform: scale(0.8); opacity: 0; }
+  60% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.4s ease-out;
+}
