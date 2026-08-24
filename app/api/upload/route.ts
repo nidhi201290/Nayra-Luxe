@@ -13,6 +13,8 @@ const ALLOWED_TYPES: Record<string, string> = {
 const ALLOWED_FOLDERS = new Set(['products', 'media']);
 const BUCKET = 'media';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const file = formData.get('file');

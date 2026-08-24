@@ -14,5 +14,9 @@ export function getSupabaseAdmin() {
   }
   return createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false },
+    // Next.js patches global fetch to cache GET requests by default — without
+    // this, reads through this client can silently return stale data cached
+    // from an earlier request instead of hitting Supabase.
+    global: { fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }) },
   });
 }

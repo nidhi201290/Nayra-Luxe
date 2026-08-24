@@ -31,6 +31,7 @@ interface AdminProductState {
   addProduct: (product: Product) => void;
   updateProduct: (id: string, fields: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
+  hydrateImages: (imagesById: Record<string, string[]>) => void;
 }
 
 export const useAdminProductStore = create<AdminProductState>()(
@@ -38,11 +39,27 @@ export const useAdminProductStore = create<AdminProductState>()(
     (set) => ({
       products: seedProducts,
       addProduct: (product) => set((state) => ({ products: [product, ...state.products] })),
-      updateProduct: (id, fields) =>
+      updateProduct: (id, fields) => {
         set((state) => ({
           products: state.products.map((p) => (p.id === id ? { ...p, ...fields } : p)),
-        })),
+        }));
+        // Photos are the one field wired to Supabase so far (see product/images
+        // route) — matches product/name/status still only live in localStorage.
+        if (fields.images) {
+          fetch('/api/products/images', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, images: fields.images }),
+          }).catch((err) => console.error('Failed to persist product images:', err));
+        }
+      },
       deleteProduct: (id) => set((state) => ({ products: state.products.filter((p) => p.id !== id) })),
+      hydrateImages: (imagesById) =>
+        set((state) => ({
+          products: state.products.map((p) =>
+            imagesById[p.id] && imagesById[p.id].length > 0 ? { ...p, images: imagesById[p.id] } : p
+          ),
+        })),
     }),
     { name: 'nayra-admin-products' }
   )
