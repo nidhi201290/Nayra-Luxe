@@ -59,21 +59,39 @@ export function useLiveProduct(fallback: Product): Product {
 
 interface SiteMediaState {
   images: Record<string, string>;
+  hydrated: boolean;
+  hydrate: (images: Record<string, string>) => void;
   setImage: (key: string, url: string) => void;
   removeImage: (key: string) => void;
 }
 
 // Non-product imagery (hero banners, category tiles, about page, etc.) — keyed by
-// slot key from lib/media-slots.ts and set from the admin Media page.
+// slot key from lib/media-slots.ts and set from the admin Media page. Backed by
+// the `site_media` table via /api/site-media so uploads are visible to every
+// visitor, not just the browser that uploaded them; localStorage here is only
+// an instant-paint cache until that fetch resolves.
 export const useSiteMediaStore = create<SiteMediaState>()(
   persist(
     (set) => ({
       images: {},
-      setImage: (key, url) => set((state) => ({ images: { ...state.images, [key]: url } })),
-      removeImage: (key) =>
+      hydrated: false,
+      hydrate: (images) => set({ images, hydrated: true }),
+      setImage: (key, url) => {
+        set((state) => ({ images: { ...state.images, [key]: url } }));
+        fetch('/api/site-media', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key, url }),
+        }).catch((err) => console.error('Failed to persist site media:', err));
+      },
+      removeImage: (key) => {
         set((state) => ({
           images: Object.fromEntries(Object.entries(state.images).filter(([k]) => k !== key)),
-        })),
+        }));
+        fetch(`/api/site-media?key=${encodeURIComponent(key)}`, { method: 'DELETE' }).catch((err) =>
+          console.error('Failed to delete site media:', err)
+        );
+      },
     }),
     { name: 'nayra-site-media' }
   )
