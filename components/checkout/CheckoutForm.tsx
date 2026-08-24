@@ -88,7 +88,7 @@ export default function CheckoutForm() {
 
       addOrder(order);
       clearCart();
-      router.push(`/order-confirmation/${orderId}`);
+      router.push(`/order-confirmation?orderId=${orderId}`);
     }, 1200);
   }
 

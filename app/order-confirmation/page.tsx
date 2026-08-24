@@ -1,14 +1,24 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { CheckCircle2 } from 'lucide-react';
 import { useOrderStore } from '@/lib/store';
 import { formatINR } from '@/lib/utils';
 
 export default function OrderConfirmationPage() {
-  const params = useParams<{ orderId: string }>();
-  const order = useOrderStore((s) => s.getOrder(params.orderId));
+  return (
+    <Suspense>
+      <OrderConfirmationContent />
+    </Suspense>
+  );
+}
+
+function OrderConfirmationContent() {
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get('orderId') ?? '';
+  const order = useOrderStore((s) => s.getOrder(orderId));
 
   if (!order) {
     return (
