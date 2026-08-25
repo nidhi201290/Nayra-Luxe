@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: 'Return & Exchange Policy', alternate
 export default function ReturnsPolicyPage() {
   return (
     <PolicyLayout title="Return & Exchange Policy">
-      <p>We want you to love your Nayra Luxe piece. If something isn&apos;t right, we offer easy 7-day returns and exchanges.</p>
+      {/* <p>We want you to love your Nayra Luxe piece. If something isn&apos;t right, we offer easy 7-day returns and exchanges.</p> */}
 
       <h2>Eligibility</h2>
       <ul>

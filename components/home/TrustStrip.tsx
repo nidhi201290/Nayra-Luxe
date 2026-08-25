@@ -3,7 +3,8 @@ import { Gem, ShieldCheck, Truck, RotateCcw, Lock } from 'lucide-react';
 const ITEMS = [
   { icon: ShieldCheck, label: 'Anti-Tarnish Guarantee' },
   { icon: Truck, label: 'Free Shipping over ₹999' },
-  { icon: RotateCcw, label: 'Easy 7-Day Returns' },
+  // { icon: RotateCcw, label: 'Easy 7-Day Returns' },
+  { icon: Gem, label: '18K Gold PVD Plated' },
   { icon: Lock, label: '100% Secure Payments' },
   { icon: Gem, label: '316 Stainless Steel' },
 ];
