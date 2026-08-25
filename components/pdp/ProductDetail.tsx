@@ -152,7 +152,7 @@ export default function ProductDetail({ product: staticProduct }: { product: Pro
               rel="noreferrer"
               aria-disabled={outOfStock}
               className={cn(
-                'btn-primary flex w-full items-center justify-center gap-2',
+                'btn-primary flex w-full items-center justify-center gap-2 bg-whatsapp hover:bg-whatsapp/90',
                 outOfStock && 'pointer-events-none opacity-50'
               )}
             >
@@ -308,7 +308,7 @@ export default function ProductDetail({ product: staticProduct }: { product: Pro
           rel="noreferrer"
           aria-disabled={outOfStock}
           className={cn(
-            'btn-primary flex flex-none items-center gap-2',
+            'btn-primary flex flex-none items-center gap-2 bg-whatsapp hover:bg-whatsapp/90',
             outOfStock && 'pointer-events-none opacity-50'
           )}
         >
