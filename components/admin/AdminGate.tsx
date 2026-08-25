@@ -36,7 +36,6 @@ export default function AdminGate({ children }: { children: React.ReactNode }) {
           {error && <p className="text-caption text-error">{error}</p>}
           <button type="submit" className="btn-primary w-full">Login</button>
         </form>
-        <p className="mt-4 text-center text-caption text-charcoal-muted">Demo password: nayra-admin</p>
       </div>
     </div>
   );
