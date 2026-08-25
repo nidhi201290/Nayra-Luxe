@@ -26,10 +26,16 @@ export default function Hero() {
     <section className="relative min-h-[420px] overflow-hidden md:min-h-[560px]">
       <Link href={slide.href} aria-label={slide.title} className="absolute inset-0 z-0 block">
         <SiteImage
-          slotKey={slide.key}
+          slotKey={`${slide.key}-desktop`}
           fallbackSeed={index}
           fallbackName={slide.title}
-          className="aspect-auto h-full w-full"
+          className="hidden aspect-auto h-full w-full md:block"
+        />
+        <SiteImage
+          slotKey={`${slide.key}-mobile`}
+          fallbackSeed={index}
+          fallbackName={slide.title}
+          className="aspect-auto h-full w-full md:hidden"
         />
       </Link>
 
