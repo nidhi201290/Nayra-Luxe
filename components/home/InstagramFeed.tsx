@@ -1,6 +1,15 @@
 import { Instagram } from 'lucide-react';
 import ProductImage from '../ProductImage';
 
+const POSTS = [
+  'https://www.instagram.com/reel/DcOQYGVJjym/',
+  'https://www.instagram.com/reel/DbsznrdqxE_/',
+  'https://www.instagram.com/reel/DbVCTA9pI0C/',
+  'https://www.instagram.com/reel/DbFG5uYpVff/',
+  'https://www.instagram.com/p/Da5JITwCdK7/',
+  'https://www.instagram.com/reel/DamHFejJYAF/',
+];
+
 export default function InstagramFeed() {
   return (
     <section className="section section-y">
@@ -9,10 +18,10 @@ export default function InstagramFeed() {
         <h2 className="text-h2">@nayra_luxe on Instagram</h2>
       </div>
       <div className="grid grid-cols-3 gap-2 md:grid-cols-6 md:gap-3">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {POSTS.map((href, i) => (
           <a
-            key={i}
-            href="https://www.instagram.com/nayra_luxe/"
+            key={href}
+            href={href}
             target="_blank"
             rel="noreferrer"
             className="group relative block overflow-hidden rounded-sm"
