@@ -2,17 +2,20 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Heart, Instagram, Link2, MessageCircle, ShieldCheck, RotateCcw, Lock, Truck, Star } from 'lucide-react';
 import { Product } from '@/lib/types';
 import ImageGallery from './ImageGallery';
 import Price from '../Price';
 import PincodeCheck from './PincodeCheck';
 import ProductCarousel from '../home/ProductCarousel';
-import { useCartStore, useWishlistStore } from '@/lib/store';
+import { useWishlistStore } from '@/lib/store';
 import { useLiveProduct } from '@/lib/admin-store';
 import { getRelatedProducts } from '@/lib/mock-data';
-import { cn } from '@/lib/utils';
+import { cn, formatINR } from '@/lib/utils';
+import WhatsAppIcon from '../WhatsAppIcon';
+
+const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919811553264';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nayraluxe.com';
 
 type Tab = 'details' | 'care' | 'shipping' | 'size-guide';
 
@@ -30,9 +33,7 @@ export default function ProductDetail({ product: staticProduct }: { product: Pro
   const [selectedVariantId, setSelectedVariantId] = useState(product.variants[0]?.id);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<Tab>('details');
-  const router = useRouter();
 
-  const addItem = useCartStore((s) => s.addItem);
   const { toggle, isWishlisted } = useWishlistStore();
   const wishlisted = isWishlisted(product.id);
 
@@ -47,18 +48,18 @@ export default function ProductDetail({ product: staticProduct }: { product: Pro
     return counts;
   }, [product.reviews]);
 
-  function handleAddToCart() {
-    if (!selectedVariant) return;
-    addItem(product.id, selectedVariant.id, quantity);
-  }
-
-  function handleBuyNow() {
-    if (!selectedVariant) return;
-    addItem(product.id, selectedVariant.id, quantity);
-    router.push('/checkout');
-  }
-
   const outOfStock = selectedVariant ? selectedVariant.stock === 0 : false;
+
+  const variantLabel = selectedVariant?.size ? `Size ${selectedVariant.size}` : selectedVariant?.color;
+  const orderMessage = [
+    `Hi, I'd like to order:`,
+    '',
+    `${product.name}${variantLabel ? ` (${variantLabel})` : ''} × ${quantity}`,
+    `Price: ${formatINR(product.salePrice * quantity)}`,
+    '',
+    `${SITE_URL}/product/${product.slug}`,
+  ].join('\n');
+  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(orderMessage)}`;
 
   return (
     <div className="section section-y">
@@ -144,13 +145,20 @@ export default function ProductDetail({ product: staticProduct }: { product: Pro
             </button>
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 md:flex-row">
-            <button onClick={handleAddToCart} disabled={outOfStock} className="btn-secondary flex-1">
-              Add to Cart
-            </button>
-            <button onClick={handleBuyNow} disabled={outOfStock} className="btn-primary flex-1">
-              Buy Now
-            </button>
+          <div className="mt-6">
+            <a
+              href={outOfStock ? undefined : whatsappHref}
+              target="_blank"
+              rel="noreferrer"
+              aria-disabled={outOfStock}
+              className={cn(
+                'btn-primary flex w-full items-center justify-center gap-2',
+                outOfStock && 'pointer-events-none opacity-50'
+              )}
+            >
+              <WhatsAppIcon className="h-5 w-5" />
+              Order on WhatsApp
+            </a>
           </div>
 
           <div className="mt-6">
@@ -294,9 +302,19 @@ export default function ProductDetail({ product: staticProduct }: { product: Pro
           <p className="line-clamp-1 text-caption text-charcoal">{product.name}</p>
           <Price basePrice={product.basePrice} salePrice={product.salePrice} size="sm" />
         </div>
-        <button onClick={handleAddToCart} disabled={outOfStock} className="btn-primary flex-none">
-          Add to Cart
-        </button>
+        <a
+          href={outOfStock ? undefined : whatsappHref}
+          target="_blank"
+          rel="noreferrer"
+          aria-disabled={outOfStock}
+          className={cn(
+            'btn-primary flex flex-none items-center gap-2',
+            outOfStock && 'pointer-events-none opacity-50'
+          )}
+        >
+          <WhatsAppIcon className="h-4 w-4" />
+          Order on WhatsApp
+        </a>
       </div>
     </div>
   );
