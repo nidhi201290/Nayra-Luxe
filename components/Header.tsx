@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from 'lucide-react';
+import { ChevronDown, Heart, Menu, Search, User, X } from 'lucide-react';
 import Logo from './Logo';
-import { useCartStore, useWishlistStore } from '@/lib/store';
+import { useWishlistStore } from '@/lib/store';
 import SearchOverlay from './SearchOverlay';
 import NavCategoryDropdown from './NavCategoryDropdown';
 import { categories } from '@/lib/mock-data';
@@ -20,9 +20,7 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileCategoryOpen, setMobileCategoryOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const cartCount = useCartStore((s) => s.lines.reduce((sum, l) => sum + l.quantity, 0));
   const wishlistCount = useWishlistStore((s) => s.productIds.length);
-  const openCartDrawer = useCartStore((s) => s.openDrawer);
 
   return (
     <>
@@ -67,14 +65,6 @@ export default function Header() {
                 </span>
               )}
             </Link>
-            <button aria-label="Cart" className="relative" onClick={openCartDrawer}>
-              <ShoppingBag className="h-5 w-5 text-charcoal transition-colors hover:text-gold-primary" />
-              {cartCount > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-gold-primary text-[10px] text-white">
-                  {cartCount}
-                </span>
-              )}
-            </button>
           </div>
         </div>
       </header>
