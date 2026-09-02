@@ -11,6 +11,9 @@ import ProductThumb from '@/components/ProductThumb';
 import Price from '@/components/Price';
 import { formatINR } from '@/lib/utils';
 import ProductCarousel from '@/components/home/ProductCarousel';
+import WhatsAppIcon from '@/components/WhatsAppIcon';
+
+const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919811553264';
 
 export default function CartPage() {
   const lines = useCartStore((s) => s.lines);
@@ -28,6 +31,18 @@ export default function CartPage() {
   const shipping = computeShipping(subtotal);
   const total = computeTotal(subtotal, discount, shipping);
   const recommended = getProductsByCollection('bestsellers').slice(0, 4);
+
+  const orderMessage = [
+    `Hi, I'd like to order:`,
+    '',
+    ...details.map(({ line, product, variant }) => {
+      const variantLabel = variant?.size ? `Size ${variant.size}` : variant?.color;
+      return `${product.name}${variantLabel ? ` (${variantLabel})` : ''} × ${line.quantity} — ${formatINR(product.salePrice * line.quantity)}`;
+    }),
+    '',
+    `Total: ${formatINR(total)}`,
+  ].join('\n');
+  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(orderMessage)}`;
 
   function applyCoupon() {
     const match = coupons.find((c) => c.code.toLowerCase() === couponInput.trim().toLowerCase());
@@ -146,7 +161,15 @@ export default function CartPage() {
             </div>
           </div>
 
-          <Link href="/checkout" className="btn-primary mt-6 w-full">Proceed to Checkout</Link>
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-primary mt-6 flex w-full items-center justify-center gap-2 bg-whatsapp hover:bg-whatsapp/90"
+          >
+            <WhatsAppIcon className="h-5 w-5" />
+            Order on WhatsApp
+          </a>
         </div>
       </div>
 
