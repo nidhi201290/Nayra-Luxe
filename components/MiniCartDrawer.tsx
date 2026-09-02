@@ -5,9 +5,11 @@ import { Minus, Plus, ShoppingBag, X } from 'lucide-react';
 import { useCartStore, getCartDetails } from '@/lib/store';
 import { useAdminProductStore } from '@/lib/admin-store';
 import ProductThumb from './ProductThumb';
+import WhatsAppIcon from './WhatsAppIcon';
 import { formatINR } from '@/lib/utils';
 
 const FREE_SHIPPING_THRESHOLD = 999;
+const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919811553264';
 
 export default function MiniCartDrawer() {
   const isOpen = useCartStore((s) => s.isDrawerOpen);
@@ -21,6 +23,18 @@ export default function MiniCartDrawer() {
   const subtotal = details.reduce((sum, d) => sum + d.product.salePrice * d.line.quantity, 0);
   const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
   const progress = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
+
+  const orderMessage = [
+    `Hi, I'd like to order:`,
+    '',
+    ...details.map(({ line, product, variant }) => {
+      const variantLabel = variant?.size ? `Size ${variant.size}` : variant?.color;
+      return `${product.name}${variantLabel ? ` (${variantLabel})` : ''} × ${line.quantity} — ${formatINR(product.salePrice * line.quantity)}`;
+    }),
+    '',
+    `Total: ${formatINR(subtotal)}`,
+  ].join('\n');
+  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(orderMessage)}`;
 
   if (!isOpen) return null;
 
@@ -111,9 +125,16 @@ export default function MiniCartDrawer() {
               <Link href="/cart" onClick={closeDrawer} className="btn-secondary w-full">
                 View Cart
               </Link>
-              <Link href="/checkout" onClick={closeDrawer} className="btn-primary w-full">
-                Checkout
-              </Link>
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noreferrer"
+                onClick={closeDrawer}
+                className="btn-primary flex w-full items-center justify-center gap-2 bg-whatsapp hover:bg-whatsapp/90"
+              >
+                <WhatsAppIcon className="h-5 w-5" />
+                Order on WhatsApp
+              </a>
             </div>
           </>
         )}

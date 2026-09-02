@@ -8,14 +8,10 @@ import ImageGallery from './ImageGallery';
 import Price from '../Price';
 import PincodeCheck from './PincodeCheck';
 import ProductCarousel from '../home/ProductCarousel';
-import { useWishlistStore } from '@/lib/store';
+import { useCartStore, useWishlistStore } from '@/lib/store';
 import { useLiveProduct } from '@/lib/admin-store';
 import { getRelatedProducts } from '@/lib/mock-data';
-import { cn, formatINR } from '@/lib/utils';
-import WhatsAppIcon from '../WhatsAppIcon';
-
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919811553264';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nayraluxe.com';
+import { cn } from '@/lib/utils';
 
 type Tab = 'details' | 'care' | 'shipping' | 'size-guide';
 
@@ -34,6 +30,7 @@ export default function ProductDetail({ product: staticProduct }: { product: Pro
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<Tab>('details');
 
+  const addItem = useCartStore((s) => s.addItem);
   const { toggle, isWishlisted } = useWishlistStore();
   const wishlisted = isWishlisted(product.id);
 
@@ -48,18 +45,12 @@ export default function ProductDetail({ product: staticProduct }: { product: Pro
     return counts;
   }, [product.reviews]);
 
-  const outOfStock = selectedVariant ? selectedVariant.stock === 0 : false;
+  function handleAddToCart() {
+    if (!selectedVariant) return;
+    addItem(product.id, selectedVariant.id, quantity);
+  }
 
-  const variantLabel = selectedVariant?.size ? `Size ${selectedVariant.size}` : selectedVariant?.color;
-  const orderMessage = [
-    `Hi, I'd like to order:`,
-    '',
-    `${product.name}${variantLabel ? ` (${variantLabel})` : ''} × ${quantity}`,
-    `Price: ${formatINR(product.salePrice * quantity)}`,
-    '',
-    `${SITE_URL}/product/${product.slug}`,
-  ].join('\n');
-  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(orderMessage)}`;
+  const outOfStock = selectedVariant ? selectedVariant.stock === 0 : false;
 
   return (
     <div className="section section-y">
@@ -146,19 +137,9 @@ export default function ProductDetail({ product: staticProduct }: { product: Pro
           </div>
 
           <div className="mt-6">
-            <a
-              href={outOfStock ? undefined : whatsappHref}
-              target="_blank"
-              rel="noreferrer"
-              aria-disabled={outOfStock}
-              className={cn(
-                'btn-primary flex w-full items-center justify-center gap-2 bg-whatsapp hover:bg-whatsapp/90',
-                outOfStock && 'pointer-events-none opacity-50'
-              )}
-            >
-              <WhatsAppIcon className="h-5 w-5" />
-              Order on WhatsApp
-            </a>
+            <button onClick={handleAddToCart} disabled={outOfStock} className="btn-primary w-full">
+              Add to Cart
+            </button>
           </div>
 
           <div className="mt-6">
@@ -302,19 +283,9 @@ export default function ProductDetail({ product: staticProduct }: { product: Pro
           <p className="line-clamp-1 text-caption text-charcoal">{product.name}</p>
           <Price basePrice={product.basePrice} salePrice={product.salePrice} size="sm" />
         </div>
-        <a
-          href={outOfStock ? undefined : whatsappHref}
-          target="_blank"
-          rel="noreferrer"
-          aria-disabled={outOfStock}
-          className={cn(
-            'btn-primary flex flex-none items-center gap-2 bg-whatsapp hover:bg-whatsapp/90',
-            outOfStock && 'pointer-events-none opacity-50'
-          )}
-        >
-          <WhatsAppIcon className="h-4 w-4" />
-          Order on WhatsApp
-        </a>
+        <button onClick={handleAddToCart} disabled={outOfStock} className="btn-primary flex-none">
+          Add to Cart
+        </button>
       </div>
     </div>
   );
