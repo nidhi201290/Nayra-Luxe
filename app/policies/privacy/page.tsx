@@ -10,9 +10,9 @@ export default function PrivacyPolicyPage() {
 
       <h2>Information We Collect</h2>
       <ul>
-        <li>Contact details: name, phone number, email address</li>
-        <li>Shipping addresses</li>
-        <li>Order history and payment status (payment details themselves are processed securely by Razorpay — we never store card/UPI details)</li>
+        <li>Contact details: name, phone number, email address, shared by you when you message us on WhatsApp</li>
+        <li>Shipping addresses shared by you to fulfil your order</li>
+        <li>Order history and payment status (payment is made directly by you via UPI to our shared QR/scanner — we do not collect or store your UPI PIN, bank, or card details)</li>
       </ul>
 
       <h2>How We Use Your Information</h2>
@@ -24,7 +24,7 @@ export default function PrivacyPolicyPage() {
       </ul>
 
       <h2>Data Sharing</h2>
-      <p>We share order and address details only with our payment processor (Razorpay) and shipping partner (Shiprocket) to fulfil your order. We do not sell your data to third parties.</p>
+      <p>We share order and address details only with our shipping partner (Shiprocket) to fulfil your order. We do not sell your data to third parties.</p>
 
       <h2>Your Rights</h2>
       <p>You can request access to, correction of, or deletion of your personal data by contacting Luxenayra@gmail.com.</p>
