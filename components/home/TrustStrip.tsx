@@ -5,7 +5,6 @@ const ITEMS = [
   { icon: Truck, label: 'Free Shipping over ₹999' },
   // { icon: RotateCcw, label: 'Easy 7-Day Returns' },
   { icon: Gem, label: '18K Gold PVD Plated' },
-  { icon: Lock, label: '100% Secure Payments' },
   { icon: Gem, label: '316 Stainless Steel' },
 ];
 
