@@ -30,12 +30,12 @@ export default function ContactForm() {
           <span className="text-caption text-charcoal-muted">@nayra_luxe</span>
         </a>
         <a
-          href="mailto:care@nayraluxe.com"
+          href="mailto:Luxenayra@gmail.com"
           className="flex flex-col items-center gap-2 rounded-md border border-border p-5 text-center hover:border-gold-primary"
         >
           <Mail className="h-6 w-6 text-gold-primary" />
           <span className="text-body font-medium text-charcoal">Email</span>
-          <span className="text-caption text-charcoal-muted">care@nayraluxe.com</span>
+          <span className="text-caption text-charcoal-muted">Luxenayra@gmail.com</span>
         </a>
       </div>
 

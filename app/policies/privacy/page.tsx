@@ -27,7 +27,7 @@ export default function PrivacyPolicyPage() {
       <p>We share order and address details only with our payment processor (Razorpay) and shipping partner (Shiprocket) to fulfil your order. We do not sell your data to third parties.</p>
 
       <h2>Your Rights</h2>
-      <p>You can request access to, correction of, or deletion of your personal data by contacting care@nayraluxe.com.</p>
+      <p>You can request access to, correction of, or deletion of your personal data by contacting Luxenayra@gmail.com.</p>
     </PolicyLayout>
   );
 }

@@ -72,7 +72,7 @@ export default function Footer() {
               <Send className="h-4 w-4" />
             </button>
           </form>
-          <p className="mt-4 text-caption text-white/70">care@nayraluxe.com · +91 98115 53264</p>
+          <p className="mt-4 text-caption text-white/70">Luxenayra@gmail.com · +91 98115 53264</p>
         </div>
       </div>
 
