@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Instagram, Facebook, Send } from 'lucide-react';
+import { Instagram, Send } from 'lucide-react';
 import Logo from './Logo';
 import { categories } from '@/lib/mock-data';
 
@@ -23,15 +23,6 @@ export default function Footer() {
               className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 text-white transition-colors hover:border-gold-primary hover:text-gold-primary"
             >
               <Instagram className="h-4 w-4" />
-            </a>
-            <a
-              href="https://facebook.com"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Facebook"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 text-white transition-colors hover:border-gold-primary hover:text-gold-primary"
-            >
-              <Facebook className="h-4 w-4" />
             </a>
           </div>
         </div>
@@ -72,7 +63,11 @@ export default function Footer() {
               <Send className="h-4 w-4" />
             </button>
           </form>
-          <p className="mt-4 text-caption text-white/70">Luxenayra@gmail.com · +91 98115 53264</p>
+          <p className="mt-4 text-caption text-white/70">
+            Luxenayra@gmail.com
+            <br />
+            +91 98115 53264
+          </p>
         </div>
       </div>
 
