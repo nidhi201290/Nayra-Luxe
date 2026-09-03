@@ -16,7 +16,7 @@ const FAQS = [
   // },
   {
     q: 'What payment methods do you accept?',
-    a: 'We accept UPI, credit/debit cards, netbanking and wallets via Razorpay. We do not offer Cash on Delivery at this time.',
+    a: 'We accept UPI payments via Razorpay. We do not offer Cash on Delivery at this time.',
   },
   {
     q: 'How do I find my ring size?',

@@ -13,7 +13,7 @@ import { Order, OrderItem } from '@/lib/types';
 import Price from '../Price';
 import ProductThumb from '../ProductThumb';
 
-type PaymentMethod = 'upi' | 'card' | 'netbanking' | 'wallet';
+type PaymentMethod = 'upi';
 
 export default function CheckoutForm() {
   const router = useRouter();
@@ -141,29 +141,19 @@ export default function CheckoutForm() {
         <section>
           <h2 className="mb-4 font-body text-h4">4. Payment Method</h2>
           <div className="space-y-2">
-            {([
-              ['upi', 'UPI'],
-              ['card', 'Credit / Debit Card'],
-              ['netbanking', 'Netbanking'],
-              ['wallet', 'Wallets'],
-            ] as [PaymentMethod, string][]).map(([value, label]) => (
-              <label
-                key={value}
-                className="flex items-center gap-3 rounded-md border border-border p-3 text-body text-charcoal has-[:checked]:border-gold-primary has-[:checked]:bg-blush"
-              >
-                <input
-                  type="radio"
-                  name="payment"
-                  checked={paymentMethod === value}
-                  onChange={() => setPaymentMethod(value)}
-                  className="h-4 w-4 accent-[#AA7717]"
-                />
-                {label}
-              </label>
-            ))}
+            <label className="flex items-center gap-3 rounded-md border border-gold-primary bg-blush p-3 text-body text-charcoal">
+              <input
+                type="radio"
+                name="payment"
+                checked={paymentMethod === 'upi'}
+                onChange={() => setPaymentMethod('upi')}
+                className="h-4 w-4 accent-[#AA7717]"
+              />
+              UPI
+            </label>
           </div>
           <p className="mt-3 text-caption text-charcoal-muted">
-            Online prepaid payment only via Razorpay — Cash on Delivery is not available.
+            Online prepaid payment via UPI only — Cash on Delivery is not available.
           </p>
         </section>
       </div>

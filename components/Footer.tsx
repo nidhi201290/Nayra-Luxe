@@ -74,7 +74,7 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <div className="section flex flex-col items-center justify-between gap-2 py-4 text-caption text-white/60 md:flex-row">
           <p>© {new Date().getFullYear()} Nayra Luxe. All rights reserved.</p>
-          <p>Payments secured by Razorpay · UPI · Cards · Netbanking</p>
+          <p>Payments secured by Razorpay · UPI Only</p>
         </div>
       </div>
     </footer>

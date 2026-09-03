@@ -9,7 +9,7 @@ export default function TermsPolicyPage() {
       <p>By using the Nayra Luxe website and placing an order, you agree to the following terms.</p>
 
       <h2>Orders & Payment</h2>
-      <p>All orders must be paid for online via Razorpay (UPI, cards, netbanking, or wallets) at the time of purchase. We do not offer Cash on Delivery. An order is only confirmed after successful payment.</p>
+      <p>All orders must be paid for online via UPI (through Razorpay) at the time of purchase. We do not offer Cash on Delivery. An order is only confirmed after successful payment.</p>
 
       <h2>Pricing</h2>
       <p>All prices are listed in INR (₹) and are inclusive of applicable taxes. We reserve the right to change prices at any time without prior notice.</p>
