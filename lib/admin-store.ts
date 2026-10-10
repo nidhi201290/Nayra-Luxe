@@ -7,24 +7,51 @@ import { products as seedProducts, coupons as seedCoupons } from './mock-data';
 
 interface AdminAuthState {
   isAdmin: boolean;
-  login: (password: string) => boolean;
-  logout: () => void;
+  /** True until the initial session check resolves, so the gate doesn't flash. */
+  isCheckingSession: boolean;
+  login: (password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  checkSession: () => Promise<void>;
 }
 
-export const useAdminAuthStore = create<AdminAuthState>()(
-  persist(
-    (set) => ({
-      isAdmin: false,
-      login: (password) => {
-        const ok = password === 'nayra-admin';
-        if (ok) set({ isAdmin: true });
-        return ok;
-      },
-      logout: () => set({ isAdmin: false }),
-    }),
-    { name: 'nayra-admin-auth' }
-  )
-);
+// Auth state is never trusted from the browser — `isAdmin` only mirrors the
+// httpOnly session cookie the server sets, and the API routes verify that
+// cookie on every request regardless of what this store says.
+export const useAdminAuthStore = create<AdminAuthState>((set) => ({
+  isAdmin: false,
+  isCheckingSession: true,
+  login: async (password) => {
+    try {
+      const res = await fetch('/api/admin/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      const ok = res.ok;
+      set({ isAdmin: ok, isCheckingSession: false });
+      return ok;
+    } catch {
+      set({ isAdmin: false, isCheckingSession: false });
+      return false;
+    }
+  },
+  logout: async () => {
+    try {
+      await fetch('/api/admin/session', { method: 'DELETE' });
+    } finally {
+      set({ isAdmin: false });
+    }
+  },
+  checkSession: async () => {
+    try {
+      const res = await fetch('/api/admin/session');
+      const data = await res.json();
+      set({ isAdmin: Boolean(data.isAdmin), isCheckingSession: false });
+    } catch {
+      set({ isAdmin: false, isCheckingSession: false });
+    }
+  },
+}));
 
 interface AdminProductState {
   products: Product[];

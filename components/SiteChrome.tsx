@@ -11,7 +11,8 @@ import { useAdminProductStore, useSiteMediaStore } from '@/lib/admin-store';
 
 export default function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAdmin = pathname.startsWith('/admin');
+  const isAdmin =
+    pathname.startsWith('/admin') || pathname.startsWith('/inventory') || pathname.startsWith('/invoices');
   const hydrateSiteMedia = useSiteMediaStore((s) => s.hydrate);
   const hydrateProductImages = useAdminProductStore((s) => s.hydrateImages);
 

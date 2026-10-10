@@ -15,7 +15,7 @@ module.exports = {
         desktop: '1025px',
       },
       colors: {
-        gold: { primary: '#AA7717', light: '#D49B33' },
+        gold: { DEFAULT: '#AA7717', primary: '#AA7717', light: '#D49B33' },
         ink: '#000000',
         ivory: '#FAF5EC',
         charcoal: { DEFAULT: '#2B2B2B', muted: '#6B6B6B' },
@@ -64,6 +64,7 @@ module.exports = {
         sm: '0 1px 3px rgba(43,43,43,0.06)',
         md: '0 4px 12px rgba(43,43,43,0.10)',
         lg: '0 12px 32px rgba(43,43,43,0.14)',
+        card: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
       },
       maxWidth: {
         content: '1280px',

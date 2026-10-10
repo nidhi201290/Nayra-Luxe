@@ -1,4 +1,4 @@
-export async function uploadImage(file: File, folder: 'products' | 'media' = 'products'): Promise<string> {
+export async function uploadImage(file: File, folder: 'products' | 'media' | 'inventory' = 'products'): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('folder', folder);

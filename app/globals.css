@@ -117,6 +117,10 @@
     @apply rounded-md border border-border bg-white shadow-sm transition-[box-shadow,border-color,transform] duration-200;
   }
 
+  .label-text {
+    @apply block text-sm text-charcoal-muted mb-1;
+  }
+
   .pill {
     @apply rounded-full px-3 py-1 text-caption font-medium;
   }

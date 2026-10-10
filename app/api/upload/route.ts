@@ -10,7 +10,7 @@ const ALLOWED_TYPES: Record<string, string> = {
   'image/gif': 'gif',
 };
 // Fixed allow-list, not user input, to keep the upload path from ever escaping the media bucket.
-const ALLOWED_FOLDERS = new Set(['products', 'media']);
+const ALLOWED_FOLDERS = new Set(['products', 'media', 'inventory']);
 const BUCKET = 'media';
 
 export const dynamic = 'force-dynamic';
