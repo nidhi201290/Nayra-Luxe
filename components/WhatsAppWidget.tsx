@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import WhatsAppIcon from './WhatsAppIcon';
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919811553264';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nayraluxe.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nayra-luxe.com';
 
 export default function WhatsAppWidget() {
   const pathname = usePathname();
