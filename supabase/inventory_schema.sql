@@ -143,3 +143,44 @@ alter table inventory_products enable row level security;
 alter table inventory_batches enable row level security;
 alter table inventory_invoices enable row level security;
 alter table inventory_invoice_line_items enable row level security;
+
+-- ─────────────────────────────────────────────────────────────
+-- Invoice deletion: give the sold units back to the exact batches
+-- they came from, then remove the invoice.
+--
+-- Creating an invoice deducts stock FIFO, so deleting one without
+-- putting the stock back would silently lose those units — no sale
+-- on record, but gone from inventory. Line items remember which
+-- batch each unit came out of, so the restore is exact rather than
+-- a guess. Both steps run in one function so a failure can't leave
+-- stock restored against an invoice that still exists (or vice versa).
+--
+-- quantity_remaining is capped at quantity_bought in case the batch
+-- was edited down after the sale.
+-- ─────────────────────────────────────────────────────────────
+
+create or replace function delete_inventory_invoice(p_invoice_id uuid)
+returns void
+language plpgsql
+as $$
+declare
+  line record;
+begin
+  if not exists (select 1 from inventory_invoices where id = p_invoice_id) then
+    raise exception 'Invoice % not found', p_invoice_id;
+  end if;
+
+  for line in
+    select batch_id, quantity
+    from inventory_invoice_line_items
+    where invoice_id = p_invoice_id
+  loop
+    update inventory_batches
+    set quantity_remaining = least(quantity_remaining + line.quantity, quantity_bought)
+    where id = line.batch_id;
+  end loop;
+
+  -- Line items cascade away with the invoice.
+  delete from inventory_invoices where id = p_invoice_id;
+end;
+$$;

@@ -246,6 +246,15 @@ export async function fetchInvoiceWithLineItems(invoiceId: string): Promise<Invo
   return { ...invoice, line_items: lineItems } as InvoiceWithLineItems;
 }
 
+// Deleting restores each sold unit to the batch it came from — see
+// delete_inventory_invoice in supabase/inventory_schema.sql. Both the restore
+// and the delete happen inside that function so they can't half-apply.
+export async function deleteInvoice(invoiceId: string) {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.rpc('delete_inventory_invoice', { p_invoice_id: invoiceId });
+  if (error) throw error;
+}
+
 export async function updatePaymentStatus(invoiceId: string, status: 'Paid' | 'Pending') {
   const supabase = getSupabaseAdmin();
   const { error } = await supabase.from('inventory_invoices').update({ payment_status: status }).eq('id', invoiceId);

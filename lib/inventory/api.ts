@@ -111,6 +111,12 @@ export async function fetchInvoiceWithLineItems(invoiceId: string): Promise<Invo
   return invoice;
 }
 
+// Restores the sold units to their original batches before removing the
+// invoice — see delete_inventory_invoice in supabase/inventory_schema.sql.
+export async function deleteInvoice(invoiceId: string) {
+  await request(`/api/inventory/invoices/${invoiceId}`, { method: 'DELETE' });
+}
+
 export async function updatePaymentStatus(invoiceId: string, status: 'Paid' | 'Pending') {
   await request(`/api/inventory/invoices/${invoiceId}`, {
     method: 'PATCH',

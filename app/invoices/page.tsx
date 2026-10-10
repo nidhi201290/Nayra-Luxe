@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchInvoices, updatePaymentStatus } from "@/lib/inventory/api";
+import { deleteInvoice, fetchInvoices, updatePaymentStatus } from "@/lib/inventory/api";
 import { Invoice } from "@/lib/inventory/types";
 import { Badge } from "@/components/inventory/Badge";
 
@@ -12,6 +12,8 @@ const currency = (n: number) =>
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -29,6 +31,27 @@ export default function InvoicesPage() {
     load();
   }
 
+  async function handleDelete(inv: Invoice) {
+    // Spell out the stock side effect — it's the part that isn't obvious,
+    // and it's not reversible once confirmed.
+    const confirmed = confirm(
+      `Delete invoice ${inv.invoice_number} for ${inv.customer_name}?\n\n` +
+        `The items on it will be added back to stock. This can't be undone.`
+    );
+    if (!confirmed) return;
+
+    setDeletingId(inv.id);
+    setError(null);
+    try {
+      await deleteInvoice(inv.id);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't delete the invoice.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -40,6 +63,12 @@ export default function InvoicesPage() {
           + New Invoice
         </Link>
       </div>
+
+      {error && (
+        <div className="rounded-md border border-error/30 bg-error/5 p-3 text-sm text-error">
+          {error}
+        </div>
+      )}
 
       {loading ? (
         <p className="text-charcoal-muted">Loading…</p>
@@ -68,15 +97,24 @@ export default function InvoicesPage() {
                   {" · "}
                   {inv.payment_mode}
                 </span>
-                <button
-                  onClick={() => togglePaymentStatus(inv)}
-                  aria-label={`Mark as ${inv.payment_status === "Paid" ? "pending" : "paid"}`}
-                  className="-m-2 p-2"
-                >
-                  <Badge tone={inv.payment_status === "Paid" ? "success" : "warning"}>
-                    {inv.payment_status}
-                  </Badge>
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => togglePaymentStatus(inv)}
+                    aria-label={`Mark as ${inv.payment_status === "Paid" ? "pending" : "paid"}`}
+                    className="-m-2 p-2"
+                  >
+                    <Badge tone={inv.payment_status === "Paid" ? "success" : "warning"}>
+                      {inv.payment_status}
+                    </Badge>
+                  </button>
+                  <button
+                    onClick={() => handleDelete(inv)}
+                    disabled={deletingId === inv.id}
+                    className="px-2 py-1 text-error hover:underline disabled:opacity-50"
+                  >
+                    {deletingId === inv.id ? "Deleting…" : "Delete"}
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -93,6 +131,7 @@ export default function InvoicesPage() {
                 <th className="font-normal px-4 py-3">Payment</th>
                 <th className="font-normal px-4 py-3">Status</th>
                 <th className="font-normal px-4 py-3 text-right">Total</th>
+                <th className="font-normal px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
@@ -113,6 +152,15 @@ export default function InvoicesPage() {
                   </td>
                   <td className="px-4 py-3 text-right font-medium">
                     {currency(Number(inv.grand_total))}
+                  </td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <button
+                      onClick={() => handleDelete(inv)}
+                      disabled={deletingId === inv.id}
+                      className="text-error hover:underline disabled:opacity-50"
+                    >
+                      {deletingId === inv.id ? "Deleting…" : "Delete"}
+                    </button>
                   </td>
                 </tr>
               ))}
