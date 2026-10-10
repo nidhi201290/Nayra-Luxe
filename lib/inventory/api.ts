@@ -1,6 +1,7 @@
 import { uploadImage } from '@/lib/upload';
 import { currentSellingPrice } from './batches';
 import {
+  Batch,
   Category,
   DraftLineItem,
   Invoice,
@@ -64,6 +65,13 @@ export async function updateProduct(
   updates: Partial<Pick<Product, 'name' | 'category' | 'low_stock_threshold' | 'image_url'>>
 ) {
   await request(`/api/inventory/products/${productId}`, { method: 'PATCH', body: JSON.stringify(updates) });
+}
+
+export async function updateBatch(
+  batchId: string,
+  updates: Partial<Pick<Batch, 'original_price' | 'selling_price' | 'quantity_remaining'>>
+) {
+  await request(`/api/inventory/batches/${batchId}`, { method: 'PATCH', body: JSON.stringify(updates) });
 }
 
 export async function deleteProduct(productId: string) {
