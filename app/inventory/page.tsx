@@ -30,8 +30,7 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"all" | Category>("all");
-  const [priceMin, setPriceMin] = useState("");
-  const [priceMax, setPriceMax] = useState("");
+  const [priceFilter, setPriceFilter] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [restocking, setRestocking] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
@@ -48,20 +47,18 @@ export default function InventoryPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const min = priceMin.trim() === "" ? null : parseFloat(priceMin);
-    const max = priceMax.trim() === "" ? null : parseFloat(priceMax);
+    const exactPrice = priceFilter.trim() === "" ? null : parseFloat(priceFilter);
     return products.filter((p) => {
       if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
       if (q !== "" && !p.name.toLowerCase().includes(q)) return false;
-      if (min !== null || max !== null) {
+      if (exactPrice !== null) {
         const price = displayPriceBatch(p)?.selling_price;
-        if (price === undefined) return false;
-        if (min !== null && price < min) return false;
-        if (max !== null && price > max) return false;
+        // Round to paise before comparing so e.g. 599 matches a stored 599.00.
+        if (price === undefined || Math.round(price * 100) !== Math.round(exactPrice * 100)) return false;
       }
       return true;
     });
-  }, [products, search, categoryFilter, priceMin, priceMax]);
+  }, [products, search, categoryFilter, priceFilter]);
 
   async function load() {
     setLoading(true);
@@ -193,29 +190,16 @@ export default function InventoryPage() {
             </option>
           ))}
         </select>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            inputMode="decimal"
-            min="0"
-            value={priceMin}
-            onChange={(e) => setPriceMin(e.target.value)}
-            placeholder="Min ₹"
-            aria-label="Minimum selling price"
-            className="input-field w-24 sm:w-28"
-          />
-          <span className="text-charcoal-muted">–</span>
-          <input
-            type="number"
-            inputMode="decimal"
-            min="0"
-            value={priceMax}
-            onChange={(e) => setPriceMax(e.target.value)}
-            placeholder="Max ₹"
-            aria-label="Maximum selling price"
-            className="input-field w-24 sm:w-28"
-          />
-        </div>
+        <input
+          type="number"
+          inputMode="decimal"
+          min="0"
+          value={priceFilter}
+          onChange={(e) => setPriceFilter(e.target.value)}
+          placeholder="Price ₹"
+          aria-label="Selling price"
+          className="input-field w-28 sm:w-32"
+        />
       </div>
 
       {loading ? (
