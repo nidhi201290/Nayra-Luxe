@@ -1,21 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Pencil, PackagePlus, Layers, Trash2, Search } from "lucide-react";
 import { fetchProductsWithStock, deleteProduct, deleteBatch, updateBatch } from "@/lib/inventory/api";
-import { Batch, ProductWithStock } from "@/lib/inventory/types";
+import { currentBatch } from "@/lib/inventory/batches";
+import { Batch, Category, ProductWithStock } from "@/lib/inventory/types";
 import { Badge } from "@/components/inventory/Badge";
 import RestockForm from "@/components/inventory/RestockForm";
 import EditProductForm from "@/components/inventory/EditProductForm";
 import ProductModal from "@/components/inventory/ProductModal";
+import { cn } from "@/lib/utils";
 
 const currency = (n: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(n);
 
+const CATEGORIES: Category[] = ["Necklace", "Bracelet", "Earring", "Ring"];
+
 export default function InventoryPage() {
   const [products, setProducts] = useState<ProductWithStock[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<"all" | Category>("all");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [restocking, setRestocking] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
@@ -29,6 +36,15 @@ export default function InventoryPage() {
   const [savingBatch, setSavingBatch] = useState(false);
   const [batchError, setBatchError] = useState<string | null>(null);
   const selected = products.find((x) => x.id === selectedId) ?? null;
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return products.filter(
+      (p) =>
+        (categoryFilter === "all" || p.category === categoryFilter) &&
+        (q === "" || p.name.toLowerCase().includes(q))
+    );
+  }, [products, search, categoryFilter]);
 
   async function load() {
     setLoading(true);
@@ -87,6 +103,45 @@ export default function InventoryPage() {
     }
   }
 
+  // Shared action-icon row for both the big-picture card and the compact
+  // header shown once a card is expanded (editing / restocking / batches).
+  function renderActions(p: ProductWithStock) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <ActionButton
+          label="Restock"
+          active={restocking === p.id}
+          onClick={() => {
+            setRestocking(restocking === p.id ? null : p.id);
+            setEditing(null);
+          }}
+        >
+          <PackagePlus className="h-4 w-4" />
+        </ActionButton>
+        <ActionButton
+          label={editing === p.id ? "Cancel edit" : "Edit"}
+          active={editing === p.id}
+          onClick={() => {
+            setEditing(editing === p.id ? null : p.id);
+            setRestocking(null);
+          }}
+        >
+          <Pencil className="h-4 w-4" />
+        </ActionButton>
+        <ActionButton
+          label={expanded === p.id ? "Hide batches" : "View batches"}
+          active={expanded === p.id}
+          onClick={() => setExpanded(expanded === p.id ? null : p.id)}
+        >
+          <Layers className="h-4 w-4" />
+        </ActionButton>
+        <ActionButton label="Delete" tone="error" onClick={() => handleDeleteProduct(p.id)}>
+          <Trash2 className="h-4 w-4" />
+        </ActionButton>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -99,220 +154,203 @@ export default function InventoryPage() {
         </Link>
       </div>
 
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-charcoal-muted" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by product name…"
+            className="input-field w-full pl-9"
+          />
+        </div>
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value as "all" | Category)}
+          className="input-field sm:w-56"
+        >
+          <option value="all">All Categories</option>
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {loading ? (
         <p className="text-charcoal-muted">Loading…</p>
       ) : products.length === 0 ? (
         <div className="card p-10 text-center text-charcoal-muted">
           No products yet. Add your first one to get started.
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="card p-10 text-center text-charcoal-muted">
+          No products match your search or filter.
+        </div>
       ) : (
-        <div className="grid gap-4">
-          {products.map((p) => (
-            <div key={p.id} className="card overflow-hidden">
-              <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                <button
-                  type="button"
-                  onClick={() => setSelectedId(p.id)}
-                  aria-label={`View details for ${p.name}`}
-                  className="flex w-full sm:w-auto sm:flex-1 min-w-0 items-center gap-4 text-left rounded-md hover:bg-ivory/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light -m-1 p-1 transition-colors"
-                >
-                <div className="h-16 w-16 rounded-md bg-blush overflow-hidden flex-shrink-0 relative">
-                  {p.image_url ? (
-                    <Image src={p.image_url} alt={p.name} fill className="object-cover" />
-                  ) : null}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-medium text-ink break-words sm:truncate">{p.name}</h3>
-                    <Badge>{p.category}</Badge>
-                    {p.total_remaining === 0 ? (
-                      <Badge tone="error">Out of stock</Badge>
-                    ) : (
-                      p.is_low_stock && <Badge tone="warning">Low stock</Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-charcoal-muted mt-0.5">
-                    {p.total_remaining} unit{p.total_remaining !== 1 ? "s" : ""} across {p.batches.length} batch
-                    {p.batches.length !== 1 ? "es" : ""}
-                  </p>
-                </div>
-                </button>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                  <button
-                    onClick={() => {
-                      setRestocking(restocking === p.id ? null : p.id);
-                      setEditing(null);
-                    }}
-                    className={`flex-1 sm:flex-none whitespace-nowrap text-sm ${
-                      p.total_remaining === 0 || p.is_low_stock ? "btn-primary" : "btn-secondary"
-                    }`}
-                  >
-                    Restock
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditing(editing === p.id ? null : p.id);
-                      setRestocking(null);
-                    }}
-                    className="flex-1 sm:flex-none whitespace-nowrap text-sm btn-secondary"
-                  >
-                    {editing === p.id ? "Cancel edit" : "Edit"}
-                  </button>
-                  <button
-                    onClick={() => setExpanded(expanded === p.id ? null : p.id)}
-                    className="flex-1 sm:flex-none whitespace-nowrap text-sm btn-secondary"
-                  >
-                    {expanded === p.id ? "Hide batches" : "View batches"}
-                  </button>
-                  <button
-                    onClick={() => handleDeleteProduct(p.id)}
-                    className="shrink-0 px-2 py-2 text-sm text-error hover:underline"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((p) => {
+            const isOpen = editing === p.id || restocking === p.id || expanded === p.id;
+            // Prefer the batch currently being sold from (matches invoice
+            // pricing); fall back to the most recent batch for a sold-out
+            // product so its last known prices still show instead of a dash.
+            const priceBatch = currentBatch(p) ?? p.batches[p.batches.length - 1] ?? null;
 
-              {editing === p.id && (
-                <EditProductForm
-                  product={p}
-                  onCancel={() => setEditing(null)}
-                  onDone={() => {
-                    setEditing(null);
-                    load();
-                  }}
-                />
-              )}
-
-              {restocking === p.id && (
-                <RestockForm
-                  product={p}
-                  onCancel={() => setRestocking(null)}
-                  onDone={() => {
-                    setRestocking(null);
-                    setExpanded(p.id);
-                    load();
-                  }}
-                />
-              )}
-
-              {expanded === p.id && (
-                <div className="border-t border-border bg-ivory/60 p-4">
-                  <div className="sm:hidden space-y-3">
-                    {p.batches.map((b) => (
-                      <div key={b.id} className="rounded-md border border-border bg-white p-3 text-sm">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium text-ink">{b.purchase_date}</span>
-                          <div className="flex items-center gap-1">
-                            {editingBatch === b.id ? (
-                              <>
-                                <button
-                                  onClick={() => saveBatch(b)}
-                                  disabled={savingBatch}
-                                  className="px-2 py-1 text-gold hover:underline disabled:opacity-50"
-                                >
-                                  {savingBatch ? "Saving…" : "Save"}
-                                </button>
-                                <button
-                                  onClick={() => setEditingBatch(null)}
-                                  className="px-2 py-1 text-charcoal-muted hover:underline"
-                                >
-                                  Cancel
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => startEditBatch(b)}
-                                  className="px-2 py-1 text-ink hover:underline"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteBatch(b.id)}
-                                  className="px-2 py-1 text-error hover:underline"
-                                >
-                                  Remove
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-charcoal-muted items-center">
-                          <span>Cost</span>
-                          {editingBatch === b.id ? (
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={batchDraft.original_price}
-                              onChange={(e) =>
-                                setBatchDraft({ ...batchDraft, original_price: e.target.value })
-                              }
-                              className="input-field py-1 text-right"
-                            />
-                          ) : (
-                            <span className="text-ink text-right">{currency(b.original_price)}</span>
-                          )}
-                          <span>Selling</span>
-                          {editingBatch === b.id ? (
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={batchDraft.selling_price}
-                              onChange={(e) =>
-                                setBatchDraft({ ...batchDraft, selling_price: e.target.value })
-                              }
-                              className="input-field py-1 text-right"
-                            />
-                          ) : (
-                            <span className="text-ink text-right">{currency(b.selling_price)}</span>
-                          )}
-                          <span>Bought</span>
-                          <span className="text-ink text-right">{b.quantity_bought}</span>
-                          <span>Remaining</span>
-                          {editingBatch === b.id ? (
-                            <input
-                              type="number"
-                              min="0"
-                              max={b.quantity_bought}
-                              value={batchDraft.quantity_remaining}
-                              onChange={(e) =>
-                                setBatchDraft({ ...batchDraft, quantity_remaining: e.target.value })
-                              }
-                              className="input-field py-1 text-right"
-                            />
-                          ) : (
-                            <span className="text-ink text-right">
-                              {b.quantity_remaining === 0 ? "Sold out" : b.quantity_remaining}
-                            </span>
-                          )}
-                        </div>
-                        {editingBatch === b.id && batchError && (
-                          <p className="mt-2 text-error text-xs">{batchError}</p>
-                        )}
+            return (
+              <div
+                key={p.id}
+                className={cn(
+                  "card flex flex-col overflow-hidden",
+                  isOpen && "sm:col-span-2 lg:col-span-3"
+                )}
+              >
+                {isOpen ? (
+                  <div className="flex flex-wrap items-center gap-4 p-4">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(p.id)}
+                      aria-label={`View details for ${p.name}`}
+                      className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-blush focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
+                    >
+                      {p.image_url && <Image src={p.image_url} alt={p.name} fill className="object-cover" />}
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="truncate font-medium text-ink">{p.name}</h3>
+                        <Badge>{p.category}</Badge>
                       </div>
-                    ))}
+                      <p className="mt-0.5 text-sm text-charcoal-muted">
+                        {p.total_remaining} unit{p.total_remaining !== 1 ? "s" : ""} across {p.batches.length} batch
+                        {p.batches.length !== 1 ? "es" : ""}
+                      </p>
+                    </div>
+                    {renderActions(p)}
                   </div>
-                  <div className="hidden sm:block overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-charcoal-muted">
-                        <th className="font-normal pb-2">Purchased</th>
-                        <th className="font-normal pb-2">Cost</th>
-                        <th className="font-normal pb-2">Selling</th>
-                        <th className="font-normal pb-2">Bought</th>
-                        <th className="font-normal pb-2">Remaining</th>
-                        <th className="font-normal pb-2"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {p.batches.map((b) =>
-                        editingBatch === b.id ? (
-                          <tr key={b.id} className="border-t border-border bg-white">
-                            <td className="py-2">{b.purchase_date}</td>
-                            <td className="py-2 pr-2">
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(p.id)}
+                      aria-label={`View details for ${p.name}`}
+                      className="block text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold-light"
+                    >
+                      <div className="relative aspect-square w-full bg-blush">
+                        {p.image_url ? (
+                          <Image src={p.image_url} alt={p.name} fill className="object-cover" />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-sm text-charcoal-muted">
+                            No image
+                          </div>
+                        )}
+                        <div className="absolute left-2 top-2 flex flex-wrap gap-1">
+                          {p.total_remaining === 0 ? (
+                            <Badge tone="error">Out of stock</Badge>
+                          ) : (
+                            p.is_low_stock && <Badge tone="warning">Low stock</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="px-4 pt-3">
+                        <Badge>{p.category}</Badge>
+                        <h3 className="mt-1 line-clamp-2 font-medium text-ink">{p.name}</h3>
+                      </div>
+                    </button>
+
+                    <div className="flex flex-1 flex-col gap-3 px-4 pb-4 pt-2">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <p className="text-xs text-charcoal-muted">Original Price</p>
+                          <p className="font-medium text-ink">
+                            {priceBatch ? currency(priceBatch.original_price) : "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-charcoal-muted">Selling Price</p>
+                          <p className="font-medium text-ink">
+                            {priceBatch ? currency(priceBatch.selling_price) : "—"}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-charcoal-muted">
+                        <span className="font-medium text-ink">{p.total_remaining}</span> unit
+                        {p.total_remaining !== 1 ? "s" : ""} remaining
+                      </p>
+                      <div className="mt-auto flex items-center justify-between border-t border-border pt-3">
+                        {renderActions(p)}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {editing === p.id && (
+                  <EditProductForm
+                    product={p}
+                    onCancel={() => setEditing(null)}
+                    onDone={() => {
+                      setEditing(null);
+                      load();
+                    }}
+                  />
+                )}
+
+                {restocking === p.id && (
+                  <RestockForm
+                    product={p}
+                    onCancel={() => setRestocking(null)}
+                    onDone={() => {
+                      setRestocking(null);
+                      setExpanded(p.id);
+                      load();
+                    }}
+                  />
+                )}
+
+                {expanded === p.id && (
+                  <div className="border-t border-border bg-ivory/60 p-4">
+                    <div className="space-y-3 sm:hidden">
+                      {p.batches.map((b) => (
+                        <div key={b.id} className="rounded-md border border-border bg-white p-3 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-ink">{b.purchase_date}</span>
+                            <div className="flex items-center gap-1">
+                              {editingBatch === b.id ? (
+                                <>
+                                  <button
+                                    onClick={() => saveBatch(b)}
+                                    disabled={savingBatch}
+                                    className="px-2 py-1 text-gold hover:underline disabled:opacity-50"
+                                  >
+                                    {savingBatch ? "Saving…" : "Save"}
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingBatch(null)}
+                                    className="px-2 py-1 text-charcoal-muted hover:underline"
+                                  >
+                                    Cancel
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => startEditBatch(b)}
+                                    className="px-2 py-1 text-ink hover:underline"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteBatch(b.id)}
+                                    className="px-2 py-1 text-error hover:underline"
+                                  >
+                                    Remove
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <div className="mt-2 grid grid-cols-2 items-center gap-x-4 gap-y-1 text-charcoal-muted">
+                            <span>Cost</span>
+                            {editingBatch === b.id ? (
                               <input
                                 type="number"
                                 min="0"
@@ -321,10 +359,13 @@ export default function InventoryPage() {
                                 onChange={(e) =>
                                   setBatchDraft({ ...batchDraft, original_price: e.target.value })
                                 }
-                                className="input-field py-1 w-24"
+                                className="input-field py-1 text-right"
                               />
-                            </td>
-                            <td className="py-2 pr-2">
+                            ) : (
+                              <span className="text-right text-ink">{currency(b.original_price)}</span>
+                            )}
+                            <span>Selling</span>
+                            {editingBatch === b.id ? (
                               <input
                                 type="number"
                                 min="0"
@@ -333,11 +374,15 @@ export default function InventoryPage() {
                                 onChange={(e) =>
                                   setBatchDraft({ ...batchDraft, selling_price: e.target.value })
                                 }
-                                className="input-field py-1 w-24"
+                                className="input-field py-1 text-right"
                               />
-                            </td>
-                            <td className="py-2">{b.quantity_bought}</td>
-                            <td className="py-2 pr-2">
+                            ) : (
+                              <span className="text-right text-ink">{currency(b.selling_price)}</span>
+                            )}
+                            <span>Bought</span>
+                            <span className="text-right text-ink">{b.quantity_bought}</span>
+                            <span>Remaining</span>
+                            {editingBatch === b.id ? (
                               <input
                                 type="number"
                                 min="0"
@@ -346,57 +391,120 @@ export default function InventoryPage() {
                                 onChange={(e) =>
                                   setBatchDraft({ ...batchDraft, quantity_remaining: e.target.value })
                                 }
-                                className="input-field py-1 w-20"
+                                className="input-field py-1 text-right"
                               />
-                            </td>
-                            <td className="py-2 text-right whitespace-nowrap">
-                              <button
-                                onClick={() => saveBatch(b)}
-                                disabled={savingBatch}
-                                className="text-gold hover:underline disabled:opacity-50"
-                              >
-                                {savingBatch ? "Saving…" : "Save"}
-                              </button>
-                              <button
-                                onClick={() => setEditingBatch(null)}
-                                className="ml-3 text-charcoal-muted hover:underline"
-                              >
-                                Cancel
-                              </button>
-                              {batchError && <p className="text-error text-xs mt-1">{batchError}</p>}
-                            </td>
+                            ) : (
+                              <span className="text-right text-ink">
+                                {b.quantity_remaining === 0 ? "Sold out" : b.quantity_remaining}
+                              </span>
+                            )}
+                          </div>
+                          {editingBatch === b.id && batchError && (
+                            <p className="mt-2 text-xs text-error">{batchError}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="hidden overflow-x-auto sm:block">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-charcoal-muted">
+                            <th className="pb-2 font-normal">Purchased</th>
+                            <th className="pb-2 font-normal">Cost</th>
+                            <th className="pb-2 font-normal">Selling</th>
+                            <th className="pb-2 font-normal">Bought</th>
+                            <th className="pb-2 font-normal">Remaining</th>
+                            <th className="pb-2 font-normal"></th>
                           </tr>
-                        ) : (
-                          <tr key={b.id} className="border-t border-border">
-                            <td className="py-2">{b.purchase_date}</td>
-                            <td className="py-2">{currency(b.original_price)}</td>
-                            <td className="py-2">{currency(b.selling_price)}</td>
-                            <td className="py-2">{b.quantity_bought}</td>
-                            <td className="py-2">{b.quantity_remaining}</td>
-                            <td className="py-2 text-right whitespace-nowrap">
-                              <button
-                                onClick={() => startEditBatch(b)}
-                                className="text-ink hover:underline"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDeleteBatch(b.id)}
-                                className="ml-3 text-error hover:underline"
-                              >
-                                Remove
-                              </button>
-                            </td>
-                          </tr>
-                        )
-                      )}
-                    </tbody>
-                  </table>
+                        </thead>
+                        <tbody>
+                          {p.batches.map((b) =>
+                            editingBatch === b.id ? (
+                              <tr key={b.id} className="border-t border-border bg-white">
+                                <td className="py-2">{b.purchase_date}</td>
+                                <td className="py-2 pr-2">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={batchDraft.original_price}
+                                    onChange={(e) =>
+                                      setBatchDraft({ ...batchDraft, original_price: e.target.value })
+                                    }
+                                    className="input-field w-24 py-1"
+                                  />
+                                </td>
+                                <td className="py-2 pr-2">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={batchDraft.selling_price}
+                                    onChange={(e) =>
+                                      setBatchDraft({ ...batchDraft, selling_price: e.target.value })
+                                    }
+                                    className="input-field w-24 py-1"
+                                  />
+                                </td>
+                                <td className="py-2">{b.quantity_bought}</td>
+                                <td className="py-2 pr-2">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max={b.quantity_bought}
+                                    value={batchDraft.quantity_remaining}
+                                    onChange={(e) =>
+                                      setBatchDraft({ ...batchDraft, quantity_remaining: e.target.value })
+                                    }
+                                    className="input-field w-20 py-1"
+                                  />
+                                </td>
+                                <td className="whitespace-nowrap py-2 text-right">
+                                  <button
+                                    onClick={() => saveBatch(b)}
+                                    disabled={savingBatch}
+                                    className="text-gold hover:underline disabled:opacity-50"
+                                  >
+                                    {savingBatch ? "Saving…" : "Save"}
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingBatch(null)}
+                                    className="ml-3 text-charcoal-muted hover:underline"
+                                  >
+                                    Cancel
+                                  </button>
+                                  {batchError && <p className="mt-1 text-xs text-error">{batchError}</p>}
+                                </td>
+                              </tr>
+                            ) : (
+                              <tr key={b.id} className="border-t border-border">
+                                <td className="py-2">{b.purchase_date}</td>
+                                <td className="py-2">{currency(b.original_price)}</td>
+                                <td className="py-2">{currency(b.selling_price)}</td>
+                                <td className="py-2">{b.quantity_bought}</td>
+                                <td className="py-2">{b.quantity_remaining}</td>
+                                <td className="whitespace-nowrap py-2 text-right">
+                                  <button onClick={() => startEditBatch(b)} className="text-ink hover:underline">
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteBatch(b.id)}
+                                    className="ml-3 text-error hover:underline"
+                                  >
+                                    Remove
+                                  </button>
+                                </td>
+                              </tr>
+                            )
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
       {selected && (
@@ -410,5 +518,38 @@ export default function InventoryPage() {
         />
       )}
     </div>
+  );
+}
+
+function ActionButton({
+  label,
+  onClick,
+  active,
+  tone = "default",
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+  tone?: "default" | "error";
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className={cn(
+        "flex h-8 w-8 items-center justify-center rounded-md border transition-colors",
+        tone === "error"
+          ? "border-error/30 text-error hover:bg-error/10"
+          : active
+            ? "border-gold bg-blush text-gold"
+            : "border-border text-charcoal hover:border-gold hover:text-gold"
+      )}
+    >
+      {children}
+    </button>
   );
 }
