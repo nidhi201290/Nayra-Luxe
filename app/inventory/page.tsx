@@ -18,11 +18,20 @@ const currency = (n: number) =>
 
 const CATEGORIES: Category[] = ["Necklace", "Bracelet", "Earring", "Ring"];
 
+// The batch a product's card prices itself from: whichever batch is
+// currently being sold (matches invoice pricing), or the most recent batch
+// for a sold-out product so its last known prices still show.
+function displayPriceBatch(p: ProductWithStock) {
+  return currentBatch(p) ?? p.batches[p.batches.length - 1] ?? null;
+}
+
 export default function InventoryPage() {
   const [products, setProducts] = useState<ProductWithStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"all" | Category>("all");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [restocking, setRestocking] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
@@ -39,12 +48,20 @@ export default function InventoryPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return products.filter(
-      (p) =>
-        (categoryFilter === "all" || p.category === categoryFilter) &&
-        (q === "" || p.name.toLowerCase().includes(q))
-    );
-  }, [products, search, categoryFilter]);
+    const min = priceMin.trim() === "" ? null : parseFloat(priceMin);
+    const max = priceMax.trim() === "" ? null : parseFloat(priceMax);
+    return products.filter((p) => {
+      if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
+      if (q !== "" && !p.name.toLowerCase().includes(q)) return false;
+      if (min !== null || max !== null) {
+        const price = displayPriceBatch(p)?.selling_price;
+        if (price === undefined) return false;
+        if (min !== null && price < min) return false;
+        if (max !== null && price > max) return false;
+      }
+      return true;
+    });
+  }, [products, search, categoryFilter, priceMin, priceMax]);
 
   async function load() {
     setLoading(true);
@@ -154,8 +171,8 @@ export default function InventoryPage() {
         </Link>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[200px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-charcoal-muted" />
           <input
             value={search}
@@ -167,7 +184,7 @@ export default function InventoryPage() {
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value as "all" | Category)}
-          className="input-field sm:w-56"
+          className="input-field w-full sm:w-56"
         >
           <option value="all">All Categories</option>
           {CATEGORIES.map((c) => (
@@ -176,6 +193,29 @@ export default function InventoryPage() {
             </option>
           ))}
         </select>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            value={priceMin}
+            onChange={(e) => setPriceMin(e.target.value)}
+            placeholder="Min ₹"
+            aria-label="Minimum selling price"
+            className="input-field w-24 sm:w-28"
+          />
+          <span className="text-charcoal-muted">–</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            value={priceMax}
+            onChange={(e) => setPriceMax(e.target.value)}
+            placeholder="Max ₹"
+            aria-label="Maximum selling price"
+            className="input-field w-24 sm:w-28"
+          />
+        </div>
       </div>
 
       {loading ? (
@@ -195,7 +235,7 @@ export default function InventoryPage() {
             // Prefer the batch currently being sold from (matches invoice
             // pricing); fall back to the most recent batch for a sold-out
             // product so its last known prices still show instead of a dash.
-            const priceBatch = currentBatch(p) ?? p.batches[p.batches.length - 1] ?? null;
+            const priceBatch = displayPriceBatch(p);
 
             return (
               <div
