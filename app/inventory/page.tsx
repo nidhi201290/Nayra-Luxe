@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Pencil, PackagePlus, Layers, Trash2, Search } from "lucide-react";
+import { Pencil, PackagePlus, Layers, Trash2, Search, Check, X } from "lucide-react";
 import { fetchProductsWithStock, deleteProduct, deleteBatch, updateBatch } from "@/lib/inventory/api";
 import { currentBatch } from "@/lib/inventory/batches";
 import { Batch, Category, ProductWithStock } from "@/lib/inventory/types";
@@ -43,6 +43,10 @@ export default function InventoryPage() {
   });
   const [savingBatch, setSavingBatch] = useState(false);
   const [batchError, setBatchError] = useState<string | null>(null);
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+  const [priceDraft, setPriceDraft] = useState("");
+  const [savingPrice, setSavingPrice] = useState(false);
+  const [priceError, setPriceError] = useState<string | null>(null);
   const selected = products.find((x) => x.id === selectedId) ?? null;
 
   const filtered = useMemo(() => {
@@ -114,6 +118,39 @@ export default function InventoryPage() {
       setBatchError(err instanceof Error ? err.message : "Couldn't save the batch.");
     } finally {
       setSavingBatch(false);
+    }
+  }
+
+  function startEditPrice(p: ProductWithStock) {
+    const batch = displayPriceBatch(p);
+    if (!batch) return;
+    setEditingPriceId(p.id);
+    setPriceDraft(String(batch.selling_price));
+    setPriceError(null);
+  }
+
+  // Quick-edit for just the selling price, writing straight to the batch
+  // the card is currently pricing itself from (same one "View batches"
+  // editing would touch) — a shortcut for the common case of a price
+  // change without needing to open the full batch table.
+  async function saveSellingPrice(p: ProductWithStock) {
+    const batch = displayPriceBatch(p);
+    if (!batch) return;
+    const value = parseFloat(priceDraft);
+    if (!Number.isFinite(value) || value < 0) {
+      setPriceError("Enter a valid price.");
+      return;
+    }
+    setSavingPrice(true);
+    setPriceError(null);
+    try {
+      await updateBatch(batch.id, { selling_price: value });
+      setEditingPriceId(null);
+      load();
+    } catch (err) {
+      setPriceError(err instanceof Error ? err.message : "Couldn't save the price.");
+    } finally {
+      setSavingPrice(false);
     }
   }
 
@@ -291,9 +328,55 @@ export default function InventoryPage() {
                         </div>
                         <div>
                           <p className="text-xs text-charcoal-muted">Selling Price</p>
-                          <p className="font-medium text-ink">
-                            {priceBatch ? currency(priceBatch.selling_price) : "—"}
-                          </p>
+                          {editingPriceId === p.id ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                autoFocus
+                                value={priceDraft}
+                                onChange={(e) => setPriceDraft(e.target.value)}
+                                className="input-field w-20 py-1 text-sm"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => saveSellingPrice(p)}
+                                disabled={savingPrice}
+                                aria-label="Save selling price"
+                                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-gold text-gold hover:bg-blush disabled:opacity-50"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingPriceId(null)}
+                                aria-label="Cancel"
+                                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border border-border text-charcoal-muted hover:text-ink"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-medium text-ink">
+                                {priceBatch ? currency(priceBatch.selling_price) : "—"}
+                              </p>
+                              {priceBatch && (
+                                <button
+                                  type="button"
+                                  onClick={() => startEditPrice(p)}
+                                  aria-label="Edit selling price"
+                                  className="text-charcoal-muted hover:text-gold"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          {editingPriceId === p.id && priceError && (
+                            <p className="mt-1 text-xs text-error">{priceError}</p>
+                          )}
                         </div>
                       </div>
                       <p className="text-sm text-charcoal-muted">
